@@ -1,33 +1,128 @@
-# primary-math-exercise-generator
-小学生数学练习题目自动生成系统
-项目简介
-本系统基于 Python 开发，面向 1-6 年级小学生自动生成数学练习题，支持加减乘除、四则混合、带括号运算、基础应用题等题型。可自定义题目数量、数值区间、是否进位、有无余数等难度参数，内置答案自动计算功能，支持导出文本与 Word 试卷，便于直接打印。项目采用模块化设计，配置简单、拓展性强，能够大幅减少教师、家长手动出题的时间成本，适用于课后作业、随堂小测、家庭日常数学巩固练习。
-项目结构
-plaintext
+# 小学生数学练习题目自动生成系统
+
+一键生成 1-6 年级数学练习卷，支持 TXT 和 DOCX（Word 试卷排版）两种导出格式。
+
+## 功能特性
+
+- **6 个年级预设**：覆盖小学全阶段，数值范围、题型、难度随年级递增
+- **6 种题型**：加法、减法、乘法、除法、四则混合运算（可带括号）、简单应用题
+- **灵活配置**：进位/退位、带余数除法、小数运算等开关自由组合
+- **自动答案**：内置独立答案计算与校验模块，确保准确
+- **双格式导出**：
+  - TXT：题目和答案分文件输出，便于打印
+  - DOCX：Word 试卷排版，A4 纸型，可直接打印使用
+
+## 项目结构
+
+```
 primary-math-exercise-generator/
-├── config.py          # 年级、题型、数值范围配置
+├── config.py          # 难度参数配置（1-6年级预设）
 ├── generator.py       # 题目生成核心逻辑
-├── answer_calc.py     # 标准答案自动计算模块
-├── exporter.py        # 文本/Word文档导出工具
-├── main.py            # 程序运行入口
-├── requirements.txt   # 依赖库清单
-└── output/            # 生成的试卷与答案文件
-环境与运行
-安装依赖
-bash
-运行
+├── answer_calc.py     # 标准答案计算与校验
+├── exporter.py        # TXT / DOCX 导出工具
+├── main.py            # 程序入口（命令行）
+├── requirements.txt   # 依赖清单
+└── README.md          # 项目说明
+```
+
+## 快速开始
+
+### 1. 安装依赖
+
+```bash
 pip install -r requirements.txt
-一键生成练习卷
-bash
-运行
+```
+
+### 2. 一键生成
+
+```bash
+# 默认：一年级 20 题，输出到桌面 primary-math-output/
 python main.py
-自定义参数
-修改config.py可切换年级、运算类型、题目数量、数值上限。
-核心功能
-多题型生成：纯加减、乘除、四则混合、括号运算、简单应用题
-难度可控：自定义数字范围、开关进位、余数、小数
-自动配套标准答案，分开导出方便批改
-支持 txt、docx 两种文件格式输出
-模块化低耦合，可新增题型、拓展高年级功能
-适用场景
-小学教师批量布置课堂作业、家长居家辅导自测、培训机构随堂测试出题。
+
+# 三年级 30 题
+python main.py -g 3 -n 30
+
+# 五年级 50 题，输出到指定目录
+python main.py -g 5 -n 50 -o D:/练习卷
+
+# 固定随机种子，可复现同一套题
+python main.py -g 2 -n 40 --seed 42
+
+# 查看所有年级预设配置
+python main.py --list-grades
+```
+
+### 3. 输出文件
+
+运行后在输出目录下生成：
+
+| 文件 | 说明 |
+|------|------|
+| `{年级}_练习_题目.txt` | 纯题目，学生答题用 |
+| `{年级}_练习_答案.txt` | 题目 + 答案对照 |
+| `{年级}_练习.docx` | Word 试卷，A4 排版，含答案页 |
+
+## 进阶用法
+
+### 在代码中调用
+
+```python
+from config import get_grade_config
+from generator import ExerciseGenerator
+from answer_calc import verify_answers
+from exporter import export_all
+
+# 生成题目
+cfg = get_grade_config(3)           # 三年级预设
+gen = ExerciseGenerator(cfg, seed=42)
+questions = gen.generate(30)
+
+# 校验答案
+report = verify_answers(questions)
+print(f"正确率: {report['correct']}/{report['total']}")
+
+# 导出
+files = export_all(questions, cfg.grade_name, "./output")
+```
+
+### 自定义难度配置
+
+```python
+from config import create_custom_config
+from generator import ExerciseGenerator
+
+cfg = create_custom_config(
+    grade=99,                        # 自定义标识
+    grade_name="自定义练习",
+    min_num=10,
+    max_num=100,
+    enable_addition=True,
+    enable_subtraction=True,
+    enable_multiplication=True,
+    enable_division=True,
+    enable_mixed=True,
+    allow_carry=True,
+    allow_borrow=True,
+    allow_remainder=True,
+    allow_parentheses=True,
+    decimal_places=1,                # 一位小数
+)
+
+gen = ExerciseGenerator(cfg)
+questions = gen.generate(50)
+```
+
+## 各年级配置概览
+
+| 年级 | 数值范围 | 启用题型 | 特色 |
+|------|----------|----------|------|
+| 一年级 | 0~20 | 加减法 | 无进位/退位 |
+| 二年级 | 0~100 | 加减法、乘法 | 进位/退位、九九乘法表 |
+| 三年级 | 0~1000 | 加减乘除、四则混合 | 括号选项 |
+| 四年级 | 0~10000 | 加减乘除、四则混合 | 带余数除法、扩大的乘法表 |
+| 五年级 | 0~100000 | 全题型 + 应用题 | 一位小数 |
+| 六年级 | 0~1000000 | 全题型 + 应用题 | 两位小数、更大数值 |
+
+## 许可证
+
+MIT License
